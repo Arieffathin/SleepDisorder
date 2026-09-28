@@ -1,4 +1,4 @@
-# 🩺 Sleep Disorder Prediction System (Hybrid ML & Expert System)
+# Sleep Disorder Prediction System (Hybrid ML & Expert System)
 
 Aplikasi web berbasis Flask untuk memprediksi gangguan tidur (Normal, Insomnia, Sleep Apnea) menggunakan algoritma *Machine Learning* yang diperkuat dengan *Clinical Expert System Override*. Proyek ini dikembangkan sebagai bagian dari penelitian tugas akhir (Skripsi) di UIN Ar-Raniry Banda Aceh.
 
@@ -34,5 +34,4 @@ Ikuti langkah-langkah berikut untuk menjalankan proyek ini secara lokal:
 
 **1. Clone Repositori**
 ```bash
-git clone [https://github.com/username-kamu/nama-repo-kamu.git](https://github.com/username-kamu/nama-repo-kamu.git)
-cd nama-repo-kamu
+git clone [(https://github.com/Arieffathin/SleepDisorder.git)]
