@@ -7,19 +7,6 @@ Aplikasi web berbasis Flask untuk memprediksi gangguan tidur (Normal, Insomnia, 
 ![Framework](https://img.shields.io/badge/Framework-Flask-black)
 ![ML](https://img.shields.io/badge/Machine_Learning-XGBoost%20%7C%20Random_Forest-orange)
 
-## ✨ Fitur Utama
-
-Sistem ini tidak sekadar menebak berdasarkan data, melainkan menerapkan arsitektur *safeguard* berlapis layaknya sistem teknologi kesehatan (*HealthTech*) komersial:
-
-1. **Bias-Free "Robust" Models:** Menghapus fitur demografis (`Gender` dan `Occupation`) dari dataset asli untuk mencegah model menghafal korelasi semu (*spurious correlation*), memaksa algoritma untuk murni belajar dari indikator klinis dan gaya hidup.
-2. **Interactive Model Comparison:** Dilengkapi dengan fitur *dropdown* di antarmuka web untuk membandingkan 3 model secara *real-time* tanpa *reload* server:
-   - **XGBoost** (Model Utama)
-   - **Random Forest** (Tuned Model)
-   - **Logistic Regression** (Baseline Model)
-3. **Clinical Expert System Override:** *Rule-based engine* yang membajak prediksi *Machine Learning* apabila input pengguna menunjukkan kondisi medis ekstrem yang berbahaya (misal: kurang tidur ekstrem + stres tinggi, atau Obesitas + Hipertensi). Ini memastikan prinsip *Zero False Negative* untuk keselamatan pengguna.
-4. **Explainable AI (Health Insights):** Antarmuka cerdas yang tidak hanya memberikan hasil prediksi, tetapi juga memecah metrik pengguna menjadi daftar "✅ Kebiasaan Baik" dan "⚠️ Perlu Ditingkatkan" berdasarkan standar medis (WHO/AHA).
-5. **Strict OOD Validation:** Validasi *Out-of-Distribution* di sisi *backend* untuk menolak input yang tidak masuk akal (misalnya detak jantung 900 bpm).
-
 ## Tech Stack
 
 - **Backend:** Python, Flask
