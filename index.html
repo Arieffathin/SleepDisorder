@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sleep Disorder Prediction System</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px 0;
+        }
+        .main-container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        .card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        }
+        .card-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px 15px 0 0 !important;
+            padding: 25px;
+        }
+        .form-label {
+            font-weight: 600;
+            color: #495057;
+        }
+        .btn-predict {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            padding: 12px 40px;
+            font-size: 18px;
+            font-weight: 600;
+            border-radius: 50px;
+            transition: transform 0.2s;
+        }
+        .btn-predict:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+        .result-box {
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+            animation: fadeIn 0.5s;
+        }
+        .result-normal {
+            background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%);
+            color: #155724;
+        }
+        .result-insomnia {
+            background: linear-gradient(135deg, #ffeaa7 0%, #fdcb6e 100%);
+            color: #856404;
+        }
+        .result-apnea {
+            background: linear-gradient(135deg, #fd79a8 0%, #fab1a0 100%);
+            color: #721c24;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .form-control:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <!-- Header Card -->
+        <div class="card mb-4">
+            <div class="card-header text-center">
+                <h1 class="mb-0">
+                    <i class="fas fa-bed"></i> Sleep Disorder Prediction System
+                </h1>
+                <p class="mb-0 mt-2">Multi-Model Classification System (XGBoost, Random Forest, Logistic Regression)</p>
+                <p class="mb-0"><small>Based on Clinical Metrics Only: Age, Sleep, Activity, Stress, BMI, BP, HR</small></p>
+            </div>
+        </div>
+
+        <!-- Main Form Card -->
+        <div class="card">
+            <div class="card-body p-4">
+                <!-- OOD/Error Alert (appears only when validation fails) -->
+                {% if error %}
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <h5 class="alert-heading">
+                        <i class="fas fa-exclamation-triangle"></i> Validation Error
+                    </h5>
+                    <p class="mb-0" style="white-space: pre-wrap;">{{ error }}</p>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                {% endif %}
+
+                <form method="POST" action="/predict">
+                    <div class="row">
+                        <!-- Age -->
+                        <div class="col-md-6 mb-3">
+                            <label for="age" class="form-label">
+                                <i class="fas fa-calendar-alt"></i> Age
+                            </label>
+                            <input type="number" class="form-control" id="age" name="age" 
+                                   min="27" max="59" value="{{ input_data.age if input_data else '' }}" required>
+                            <small class="text-muted">Range: 27-59 years</small>
+                        </div>
+
+                        <!-- Sleep Duration -->
+                        <div class="col-md-6 mb-3">
+                            <label for="sleep_duration" class="form-label">
+                                <i class="fas fa-moon"></i> Sleep Duration (hours)
+                            </label>
+                            <input type="number" class="form-control" id="sleep_duration" name="sleep_duration" 
+                                   step="0.1" min="4.0" max="10.0" value="{{ input_data.sleep_duration if input_data else '' }}" required>
+                            <small class="text-muted">Range: 4.0-10.0 hours</small>
+                        </div>
+
+                        <!-- Quality of Sleep -->
+                        <div class="col-md-6 mb-3">
+                            <label for="quality_of_sleep" class="form-label">
+                                <i class="fas fa-star"></i> Quality of Sleep (1-10)
+                            </label>
+                            <input type="number" class="form-control" id="quality_of_sleep" name="quality_of_sleep" 
+                                   min="1" max="10" value="{{ input_data.quality_of_sleep if input_data else '' }}" required>
+                            <small class="text-muted">1 = Poor, 10 = Excellent</small>
+                        </div>
+
+                        <!-- Physical Activity Level -->
+                        <div class="col-md-6 mb-3">
+                            <label for="physical_activity" class="form-label">
+                                <i class="fas fa-running"></i> Physical Activity Level (minutes/day)
+                            </label>
+                            <input type="number" class="form-control" id="physical_activity" name="physical_activity" 
+                                   min="0" max="180" value="{{ input_data.physical_activity if input_data else '' }}" required>
+                            <small class="text-muted">Range: 0-180 minutes</small>
+                        </div>
+
+                        <!-- Stress Level -->
+                        <div class="col-md-6 mb-3">
+                            <label for="stress_level" class="form-label">
+                                <i class="fas fa-brain"></i> Stress Level (1-10)
+                            </label>
+                            <input type="number" class="form-control" id="stress_level" name="stress_level" 
+                                   min="1" max="10" value="{{ input_data.stress_level if input_data else '' }}" required>
+                            <small class="text-muted">1 = Low, 10 = Very High</small>
+                        </div>
+
+                        <!-- BMI Category -->
+                        <div class="col-md-6 mb-3">
+                            <label for="bmi_category" class="form-label">
+                                <i class="fas fa-weight"></i> BMI Category
+                            </label>
+                            <select class="form-select" id="bmi_category" name="bmi_category" required>
+                                <option value="">Select BMI Category</option>
+                                <option value="Normal" {% if input_data and input_data.bmi_category == 'Normal' %}selected{% endif %}>Normal</option>
+                                <option value="Overweight" {% if input_data and input_data.bmi_category == 'Overweight' %}selected{% endif %}>Overweight</option>
+                                <option value="Obese" {% if input_data and input_data.bmi_category == 'Obese' %}selected{% endif %}>Obese</option>
+                                <option value="Normal Weight" {% if input_data and input_data.bmi_category == 'Normal Weight' %}selected{% endif %}>Normal Weight</option>
+                            </select>
+                        </div>
+
+                        <!-- Blood Pressure -->
+                        <div class="col-md-6 mb-3">
+                            <label for="blood_pressure" class="form-label">
+                                <i class="fas fa-heartbeat"></i> Blood Pressure (e.g., 120/80)
+                            </label>
+                            <input type="text" class="form-control" id="blood_pressure" name="blood_pressure" 
+                                   pattern="\d{2,3}/\d{2,3}" value="{{ input_data.blood_pressure if input_data else '' }}" 
+                                   placeholder="120/80" required>
+                        </div>
+
+                        <!-- Heart Rate -->
+                        <div class="col-md-6 mb-3">
+                            <label for="heart_rate" class="form-label">
+                                <i class="fas fa-heart"></i> Heart Rate (bpm)
+                            </label>
+                            <input type="number" class="form-control" id="heart_rate" name="heart_rate" 
+                                   min="40" max="120" value="{{ input_data.heart_rate if input_data else '' }}" required>
+                            <small class="text-muted">Range: 40-120 bpm</small>
+                        </div>
+
+                        <!-- Daily Steps -->
+                        <div class="col-md-6 mb-3">
+                            <label for="daily_steps" class="form-label">
+                                <i class="fas fa-shoe-prints"></i> Daily Steps
+                            </label>
+                            <input type="number" class="form-control" id="daily_steps" name="daily_steps" 
+                                   min="0" max="20000" value="{{ input_data.daily_steps if input_data else '' }}" required>
+                            <small class="text-muted">Range: 0-20,000 steps</small>
+                        </div>
+
+                        <!-- Model Selection Dropdown -->
+                        <div class="col-12 mb-3">
+                            <label for="model_choice" class="form-label">
+                                <i class="fas fa-robot text-primary"></i> Machine Learning Model
+                            </label>
+                            <select name="model_choice" id="model_choice" class="form-select form-select-lg">
+                                <option value="xgb" {% if not input_data or not input_data.model_choice or input_data.model_choice == 'xgb' %}selected{% endif %}>
+                                    XGBoost (Recommended - F1: 93.19%)
+                                </option>
+                                <option value="rf" {% if input_data and input_data.model_choice == 'rf' %}selected{% endif %}>
+                                    Random Forest (Tuned)
+                                </option>
+                                <option value="lr" {% if input_data and input_data.model_choice == 'lr' %}selected{% endif %}>
+                                    Logistic Regression (Baseline)
+                                </option>
+                            </select>
+                            <small class="text-muted">Pilih model Machine Learning yang akan digunakan untuk prediksi</small>
+                        </div>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <div class="text-center mt-4">
+                        <button type="submit" class="btn btn-primary btn-predict">
+                            <i class="fas fa-magic"></i> Predict Sleep Disorder
+                        </button>
+                    </div>
+                </form>
+
+                <!-- Result Display -->
+                {% if prediction %}
+                <!-- Determine result box styling based on prediction and override -->
+                <!-- RED (High Risk): HANYA jika prediction == 'Sleep Apnea' ATAU ada is_overridden / warning -->
+                {% if prediction == 'Sleep Apnea' or is_overridden or warning %}
+                    {% set result_class = 'result-apnea alert-danger' %}
+                    {% set icon_class = 'fa-exclamation-circle' %}
+                <!-- YELLOW (Moderate Risk): HANYA jika prediction == 'Insomnia' (dan tidak ada peringatan/override) -->
+                {% elif prediction == 'Insomnia' %}
+                    {% set result_class = 'result-insomnia alert-warning' %}
+                    {% set icon_class = 'fa-exclamation-triangle' %}
+                <!-- GREEN (Success/Safe): HANYA jika prediction == 'Normal' -->
+                {% elif prediction == 'Normal' %}
+                    {% set result_class = 'result-normal alert-success' %}
+                    {% set icon_class = 'fa-check-circle' %}
+                <!-- DEFAULT (Fallback): Red for unknown/critical -->
+                {% else %}
+                    {% set result_class = 'result-apnea alert-danger' %}
+                    {% set icon_class = 'fa-ambulance' %}
+                {% endif %}
+                
+                <div class="result-box {{ result_class }}">
+                    <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap">
+                        <h3 class="mb-0">
+                            <i class="fas {{ icon_class }}"></i> Prediction Result
+                        </h3>
+                        {% if selected_model %}
+                        <span class="badge bg-dark text-white fs-6 px-3 py-2 rounded-pill mt-1">
+                            🤖 Diprediksi menggunakan: {{ selected_model }}
+                        </span>
+                        {% endif %}
+                    </div>
+                    <h2 class="mb-2">
+                        <strong>{{ prediction }}</strong>
+                    </h2>
+                    <p class="mb-0">
+                        <i class="fas fa-chart-line"></i> Confidence: {{ confidence }}%
+                    </p>
+                    
+                    <!-- Override Badge -->
+                    {% if is_overridden %}
+                    <div class="alert alert-danger mt-3 mb-0" role="alert">
+                        <strong><i class="fas fa-shield-alt"></i> Expert System Override</strong><br>
+                        {{ override_reason }}
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Warning Alert -->
+                    {% if warning and not is_overridden %}
+                    <div class="alert alert-warning mt-3 mb-0" role="alert">
+                        <i class="fas fa-exclamation-triangle"></i> {{ warning }}
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Conditional Messages (NO contradiction) -->
+                    {% if prediction == 'Normal' and not warning and not is_overridden %}
+                    <p class="mt-3 mb-0">
+                        <i class="fas fa-smile"></i> Your sleep health appears to be in good condition. Continue maintaining healthy lifestyle habits!
+                    </p>
+                    {% elif prediction == 'Insomnia' or 'Insomnia' in prediction %}
+                    <p class="mt-3 mb-0">
+                        <i class="fas fa-exclamation-triangle"></i> Signs of insomnia detected. Consider consulting a healthcare professional for proper evaluation and treatment.
+                    </p>
+                    {% elif 'Sleep Apnea' in prediction or prediction == 'Sleep Apnea' %}
+                    <p class="mt-3 mb-0">
+                        <i class="fas fa-ambulance"></i> Signs of sleep apnea detected. It's highly recommended to consult a sleep specialist for comprehensive evaluation.
+                    </p>
+                    {% elif is_overridden or warning %}
+                    <p class="mt-3 mb-0">
+                        <i class="fas fa-hospital"></i> <strong>IMMEDIATE ACTION REQUIRED:</strong> Your clinical metrics indicate high risk. Please consult a healthcare professional as soon as possible.
+                    </p>
+                    {% endif %}
+                </div>
+                
+                <!-- Health Insights Panel (only show if prediction exists) -->
+                {% if health_insights and (health_insights.good_habits or health_insights.needs_improvement) %}
+                <div class="card mt-3">
+                    <div class="card-header" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; padding: 15px;">
+                        <h5 class="mb-0">
+                            <i class="fas fa-chart-line"></i> 📊 Analisis Gaya Hidup
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <!-- Good Habits Column -->
+                            <div class="col-md-6 mb-3">
+                                <h6 class="text-success mb-3">
+                                    <i class="fas fa-check-circle"></i> <strong>Kebiasaan Baik</strong>
+                                </h6>
+                                {% if health_insights.good_habits %}
+                                <ul class="list-unstyled">
+                                    {% for habit in health_insights.good_habits %}
+                                    <li class="mb-2">
+                                        <i class="fas fa-check text-success"></i> {{ habit }}
+                                    </li>
+                                    {% endfor %}
+                                </ul>
+                                {% else %}
+                                <p class="text-muted"><em>Belum ada kebiasaan yang optimal terdeteksi.</em></p>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Needs Improvement Column -->
+                            <div class="col-md-6 mb-3">
+                                <h6 class="text-warning mb-3">
+                                    <i class="fas fa-exclamation-triangle"></i> <strong>Perlu Ditingkatkan</strong>
+                                </h6>
+                                {% if health_insights.needs_improvement %}
+                                <ul class="list-unstyled">
+                                    {% for issue in health_insights.needs_improvement %}
+                                    <li class="mb-2">
+                                        <i class="fas fa-arrow-up text-warning"></i> {{ issue }}
+                                    </li>
+                                    {% endfor %}
+                                </ul>
+                                {% else %}
+                                <p class="text-success"><em><i class="fas fa-smile"></i> Semua metrik dalam rentang sehat!</em></p>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Recommendations -->
+                        {% if health_insights.needs_improvement %}
+                        <div class="alert alert-info mt-2 mb-0">
+                            <i class="fas fa-lightbulb"></i> <strong>Rekomendasi:</strong> 
+                            Fokus pada area yang perlu ditingkatkan untuk mengoptimalkan kualitas tidur dan kesehatan Anda secara keseluruhan.
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="text-center mt-4 text-white">
+            <p class="mb-0">
+                <i class="fas fa-info-circle"></i> This is a predictive tool based on machine learning. 
+                Always consult healthcare professionals for medical diagnosis.
+            </p>
+            <p class="mt-2 mb-0">
+                <small>Robust Model | F1-Score: 93.19% | Accuracy: 93.33% | No Demographic Bias</small>
+            </p>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
